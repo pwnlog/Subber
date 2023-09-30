@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Description: Find subnets with ICMP.
+
 import sys
 import signal
 import argparse
@@ -9,7 +11,7 @@ def interrupt_handler(signal, frame):
     global txt_output
     print("\n[!] Exiting...")
     if args.output:
-        save_to_file(txt_output, args.output)  # Save the output before exiting
+        save_to_file(txt_output, args.output)
     sys.exit(0)
 
 def icmp_scan(ip):
@@ -93,7 +95,7 @@ def main():
                             if devices_found is True:
                                 print(f"Found a subnet: {current_ip}\n")
                                 if args.output:
-                                txt_output += f"Found a subnet: {current_ip}\n"
+                                    txt_output += f"Found a subnet: {current_ip}\n"
                                 if last_number_to_compare <= 255:
                                     break
                                 else:
