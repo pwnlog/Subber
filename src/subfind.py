@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Description: Find subnets with ICMP.
+# Description: Find subnet gateways using ICMP.
 
 import sys
 import signal
@@ -8,10 +8,7 @@ import argparse
 import scapy.all as scapy
 
 def interrupt_handler(signal, frame):
-    global txt_output
-    print("\n[!] Exiting...")
-    if args.output:
-        save_to_file(txt_output, args.output)
+    print("\n[!] Ctrl+C Detected!")
     sys.exit(0)
 
 def icmp_scan(ip):
@@ -69,12 +66,10 @@ def main():
 
     signal.signal(signal.SIGINT, interrupt_handler)
 
-
     if args.output and not args.output.endswith(".txt"):
         args.output += ".txt"
 
-    if args.output:
-        txt_output = ""
+    txt_output = ""
 
     try:
         for subnet_or_range in args.subnets_and_ranges:
@@ -84,43 +79,45 @@ def main():
                     print(f"Invalid IP range: {subnet_or_range}")
                     continue
                 else:
-                    for ip in ips_to_scan:
-                        ip_parts = ip.split(".")
-                        last_octet_range = range(int(ip_parts[3]), 256)
-                        for last_octet in last_octet_range:
-                            current_ip = f"{ip_parts[0]}.{ip_parts[1]}.{ip_parts[2]}.{last_octet}"
-                            devices_found = icmp_scan(current_ip)
-                            if args.verbose:
-                                print(f"Currently scanning: {current_ip}")
-                            if devices_found is True:
-                                print(f"Found a subnet: {current_ip}\n")
-                                if args.output:
-                                    txt_output += f"Found a subnet: {current_ip}\n"
-                                if last_number_to_compare <= 255:
-                                    break
-                                else:
-                                    last_number_to_compare = int(ip_parts[2]) + 1
-                                    ip_parts[3] = "1"
+                    try:
+                        for ip in ips_to_scan:
+                            ip_parts = ip.split(".")
+                            last_octet_range = range(int(ip_parts[3]), 256)
+                            for last_octet in last_octet_range:
+                                current_ip = f"{ip_parts[0]}.{ip_parts[1]}.{ip_parts[2]}.{last_octet}"
+                                devices_found = icmp_scan(current_ip)
+                                if args.verbose:
+                                    print(f"Currently scanning: {current_ip}")
+                                if devices_found is True:
+                                    print(f"Found a subnet: {current_ip}\n")
+                                    if args.output:
+                                        txt_output += f"{current_ip}\n"
                                     if last_number_to_compare <= 255:
-                                        ip_parts[2] = str(last_number_to_compare)
+                                        break
                                     else:
-                                        last_number_to_compare = int(ip_parts[1]) + 1
-                                        ip_parts[2] = "1"
+                                        last_number_to_compare = int(ip_parts[2]) + 1
+                                        ip_parts[3] = "1"
                                         if last_number_to_compare <= 255:
-                                            ip_parts[1] = str(last_number_to_compare)
+                                            ip_parts[2] = str(last_number_to_compare)
                                         else:
-                                            ip_parts[1] = "1"
-                                            ip_parts[0] = str(int(ip_parts[0]) + 1)
-                                continue
-                            break
-    except KeyboardInterrupt:
-        print("\n[!] Exiting")
+                                            last_number_to_compare = int(ip_parts[1]) + 1
+                                            ip_parts[2] = "1"
+                                            if last_number_to_compare <= 255:
+                                                ip_parts[1] = str(last_number_to_compare)
+                                            else:
+                                                ip_parts[1] = "1"
+                                                ip_parts[0] = str(int(ip_parts[0]) + 1)
+                                    continue
+                                break
+                    except KeyboardInterrupt:
+                        print("\n[!] Exiting")
+                        raise
+    except SystemExit:
+        pass
+    finally:
+        print("[+] Saving the file")
         if args.output:
             save_to_file(txt_output, args.output)
-        sys.exit(0)
-    
-    if args.output:
-        save_to_file(txt_output, args.output)
 
 if __name__ == "__main__":
     main()

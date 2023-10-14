@@ -24,3 +24,5 @@ Store the output in TXT format:
 sudo python3 subfind.py 192.168.1-254.1-254 -o subnets.txt
 ```
 
+> [!WARNING]  
+> False positives may be expected, and it's also common for devices not to have ICMP enabled.
